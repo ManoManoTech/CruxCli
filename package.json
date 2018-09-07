@@ -1,0 +1,12 @@
+{
+  "name": "crux",
+  "version": "0.0.1",
+  "description": "A client to retrieve Crux informations",
+  "bin": "crux.js",
+  "author": "Aurélien Lajoie",
+  "license": "MIT",
+  "dependencies": {
+    "@google-cloud/bigquery": "^1.3.0",
+    "babar": "^0.2.0"
+  }
+}
