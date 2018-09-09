@@ -4,7 +4,7 @@
 
 This is a simple node.js script to get (and draw) Crux information for several websites.
 
-![Sample](https://i.imgur.com/Ab69jvy.png)
+![Sample](https://i.imgur.com/HTYRt0T.png)
 
 
 ## Usage

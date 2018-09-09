@@ -14,6 +14,8 @@ const table = "chrome-ux-report.country_fr.201805";
 const device = "phone";
 
 const OUTPUT_GREEN = '\x1b[32m';
+const OUTPUT_BLUE  = '\x1b[36m';
+const OUTPUT_RED   = '\x1b[91m';
 const OUTPUT_BOLD = '\x1b[1m';
 const OUTPUT_RESET = '\x1b[22m\x1b[39m';
 
@@ -73,16 +75,19 @@ function prettifyData(progress, duration) {
 
 function display(origin, ratio, form, percentile, delta, data, duration, maxY) {
     const green = (content) => OUTPUT_GREEN + content + OUTPUT_RESET;
+    const blue = (content) => OUTPUT_BLUE + content + OUTPUT_RESET;
+    const red  = (content) => OUTPUT_RED + content + OUTPUT_RESET;
     const bold = (content) => OUTPUT_BOLD + content + OUTPUT_RESET;
+    const per = (value) => value > duration ? red(value + ' ms') : green(value + ' ms');
     console.log([
-        `${bold('Site     ')}: ${green(origin)}`,
-        `${bold('Device   ')}: ${green(device + " " + Math.floor(ratio * 100) + "%")}`,
-        `${bold('Median   ')}: ${green(percentile[50] + ' ms')}`,
-        `${bold('90 %     ')}: ${green(percentile[90] + ' ms')}`,
+        `${bold('Site     ')}: ${blue(origin)}`,
+        `${bold('Device   ')}: ${blue(device + " " + Math.floor(ratio * 100) + "%")}`,
+        `${bold('Median   ')}: ${per(percentile[50])}`,
+        `${bold('90 %     ')}: ${per(percentile[90])}`,
+        `${bold('95 %     ')}: ${per(percentile[95])}`,
         '',
         `${bold('first contentful paint')}`
     ].join('\n'));
-    duration = 6000; /* force a duration to get same X axis */
     console.log(babar(prettifyData(delta, duration), {grid:'blue', maxY: maxY, height: 11, width: 88}));
     console.log(babar(prettifyData(data, duration), {grid:'blue', maxY: 100, height: 12, width: 88}));
     console.log("\n");
@@ -103,22 +108,25 @@ function fcp_response_parse(origin, ratio, form, rows) {
      * Clip to 98%
      * use ratio to correct denisty according to the device usage
      */
-    rows[0].some(v => {
+    rows[0].forEach(v => {
         let d = v.density * 100 / ratio;
         duration = v.start;
         maxY = Math.max(maxY, d);
         delta.push([duration, d]);
         data.push([duration, prev]);
         prev += d;
-        if (prev < 90) {
-            percentile[90] = duration;
-            if (prev < 50) {
-                percentile[50] = duration;
+        if (prev < 95) {
+            percentile[95] = duration;
+            if (prev < 90) {
+                percentile[90] = duration;
+                if (prev < 50) {
+                    percentile[50] = duration;
+                }
             }
         }
-        return prev > 98;
     });
-    display(origin, ratio, form, percentile, delta, data, duration, maxY);
+    /* use same duration for all graph */
+    display(origin, ratio, form, percentile, delta, data, 6000, maxY);
 }
 
 function fcp_query_run(origin, ratio, form) {
