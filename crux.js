@@ -6,11 +6,11 @@ const babar = require('babar');
 
 /* list of website to retrieve information */
 const origins = [
-    'https://www.cdiscount.com',
-    'https://www.rueducommerce.fr'
+    'https://www.manomano.fr',
+    'https://www.cdiscount.com'
 ];
 const projectId = 'crux-analysis';
-const table = "chrome-ux-report.country_fr.201805";
+const table = "chrome-ux-report.country_fr.202001";
 const device = "phone";
 
 const OUTPUT_GREEN = '\x1b[32m';
@@ -30,7 +30,7 @@ const phone_ratio_query = [
     "    origin,",
     "    SUM(bin.density) AS density",
     "FROM",
-    "    `chrome-ux-report.all.201805`,",
+    "    `chrome-ux-report.all.202001`,",
     "    UNNEST(dom_content_loaded.histogram.bin) AS bin",
     "WHERE",
     "    origin in UNNEST(@origins) AND",
@@ -44,6 +44,18 @@ const fcp_query = ["#standardSQL",
     "bin.start, SUM(bin.density) AS density",
     "FROM ",
     "`" + table + "` , UNNEST(first_contentful_paint.histogram.bin) AS bin",
+    "WHERE ",
+    "origin = @origin AND ",
+    "form_factor.name = @form",
+    "GROUP BY    bin.start",
+    "ORDER BY    bin.start"
+].join("\n");
+
+const fid_query = ["#standardSQL",
+    "SELECT ",
+    "bin.start, SUM(bin.density) AS density",
+    "FROM ",
+    "`" + table + "` , UNNEST(first_input.delay.histogram.bin) AS bin",
     "WHERE ",
     "origin = @origin AND ",
     "form_factor.name = @form",
@@ -73,7 +85,7 @@ function prettifyData(progress, duration) {
     return data;
 }
 
-function display(origin, ratio, form, percentile, delta, data, duration, maxY) {
+function display(title, origin, ratio, form, percentile, delta, data, duration, maxY) {
     const green = (content) => OUTPUT_GREEN + content + OUTPUT_RESET;
     const blue = (content) => OUTPUT_BLUE + content + OUTPUT_RESET;
     const red  = (content) => OUTPUT_RED + content + OUTPUT_RESET;
@@ -86,7 +98,7 @@ function display(origin, ratio, form, percentile, delta, data, duration, maxY) {
         `${bold('90 %     ')}: ${per(percentile[90])}`,
         `${bold('95 %     ')}: ${per(percentile[95])}`,
         '',
-        `${bold('first contentful paint')}`
+        `${bold(title)}`
     ].join('\n'));
     console.log(babar(prettifyData(delta, duration), {grid:'blue', maxY: maxY, height: 11, width: 88}));
     console.log(babar(prettifyData(data, duration), {grid:'blue', maxY: 100, height: 12, width: 88}));
@@ -96,7 +108,7 @@ function display(origin, ratio, form, percentile, delta, data, duration, maxY) {
 //}}}
 
 
-function fcp_response_parse(origin, ratio, form, rows) {
+function response_parse(title, origin, ratio, form, rows) {
     let data = [];
     let delta = [];
     let maxY = 10;
@@ -126,19 +138,19 @@ function fcp_response_parse(origin, ratio, form, rows) {
         }
     });
     /* use same duration for all graph */
-    display(origin, ratio, form, percentile, delta, data, 6000, maxY);
+    display(title, origin, ratio, form, percentile, delta, data, 6000, maxY);
 }
 
-function fcp_query_run(origin, ratio, form) {
+function query_run(title, query, origin, ratio, form) {
     bigquery.query({
-        query: fcp_query,
+        query: query,
         params: {
             origin: origin,
             form: form
         }
     })
         .then(rows => {
-            fcp_response_parse(origin, ratio, form, rows);
+            response_parse(title,origin, ratio, form, rows);
         })
         .catch(err => {
             console.error('ERROR:', err);
@@ -154,7 +166,8 @@ bigquery.query({
 })
     .then(rows => {
         rows[0].forEach(row => {
-            fcp_query_run(row.origin, row.density, device);
+            query_run('first contentful paint', fcp_query, row.origin, row.density, device);
+            query_run('first input delay', fid_query, row.origin, row.density, device);
         });
     })
     .catch(err => {
