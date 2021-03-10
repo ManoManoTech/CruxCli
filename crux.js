@@ -10,7 +10,7 @@ const origins = [
     'https://www.cdiscount.com'
 ];
 const projectId = 'crux-analysis';
-const table = "chrome-ux-report.country_fr.202001";
+const table = "chrome-ux-report.country_fr.202101";
 const device = "phone";
 
 const OUTPUT_GREEN = '\x1b[32m';
