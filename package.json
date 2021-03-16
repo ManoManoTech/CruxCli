@@ -6,7 +6,7 @@
   "author": "Aurélien Lajoie",
   "license": "MIT",
   "dependencies": {
-    "@google-cloud/bigquery": "^1.3.0",
+    "@google-cloud/bigquery": "^5.5.0",
     "babar": "^0.2.0"
   }
 }

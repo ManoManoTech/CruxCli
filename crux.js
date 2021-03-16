@@ -1,6 +1,6 @@
 'use strict';
 
-const BigQuery = require('@google-cloud/bigquery');
+const {BigQuery} = require('@google-cloud/bigquery');
 const babar = require('babar');
 
 
